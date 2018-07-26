@@ -8,22 +8,25 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        File file = new File("bear.jpg"); // I have bear.jpg in my working directory
+        File file = new File("C:\\Users\\Elliot\\Desktop\\bear.jpeg");
         FileInputStream fis = new FileInputStream(file);
         BufferedImage image = ImageIO.read(fis); //reading the image file
 
-        int rows = 20; //You should decide the values for rows and cols variables
+        int rows = 20;
         int cols = 30;
         int chunks = rows * cols;
 
         int chunkWidth = image.getWidth() / cols; // determines the chunk width and height
         int chunkHeight = image.getHeight() / rows;
         int count = 0;
-        chunk imgs[] = new chunk[chunks];
+        chunk[] imgs = new chunk[chunks];
         for (int x = 0; x < rows; x++) {
             for (int y = 0; y < cols; y++) {
                 //Initialize the image array with image chunks
-                imgs[count].setImg(new BufferedImage(chunkWidth, chunkHeight, image.getType()));
+                BufferedImage tempimg = new BufferedImage(chunkWidth, chunkHeight, image.getType());
+                imgs[count] = new chunk(tempimg);
+                imgs[count].average();
+
 
                 // draws the image chunk
                 Graphics2D gr = imgs[count++].getImg().createGraphics();
@@ -31,14 +34,7 @@ public class Main {
                 gr.dispose();
             }
         }
-
-
-        //writing mini images into image files
-        for (int i = 0; i < imgs.length; i++) {
-            ImageIO.write(imgs[i].getImg(), "jpg", new File("img" + i + ".jpg"));
-        }
-
-        ImageIO.write(image, "jpg", new File("collage.jpg"));
+        ImageIO.write(imgs[2].getImg(), "jpg", new File("collage.jpg"));
 
     }
 }

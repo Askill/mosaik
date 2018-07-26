@@ -1,7 +1,8 @@
 package com.company;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
-
+import javax.imageio.ImageIO;
 public class chunk {
 
 
@@ -18,21 +19,35 @@ public class chunk {
         this.img = img;
     }
     public int[] average(){
-        int r = 0, g = 0, b = 0, x= 0, y = 0, clr;
+        int r = 0, g = 0, b = 0, a = 0, x= 0, y = 0;
 
-        for(; x < this.img.getWidth(); x++){
-            for(; x < this.img .getHeight(); x++){
-                clr   = this.img.getRGB(x, y);
-                r += (clr & 0x00ff0000) >> 16;
-                g += (clr & 0x0000ff00) >> 8;
-                b +=  clr & 0x000000ff;
+        for(; y < this.img.getHeight(); y++){
+            for(; x < this.img.getWidth(); x++){
+
+                //get pixel value
+                int p = this.img.getRGB(x,y);
+
+                //get alpha
+                 a = (p>>24) & 0xff;
+
+                //get red
+                 r = (p>>16) & 0xff;
+
+                //get green
+                 g = (p>>8) & 0xff;
+
+                //get blue
+                 a = p & 0xff;
+
             }
         }
 
         r /= x*y;
         g /= x*y;
         b /= x*y;
+        a /= x*y;
 
+        System.out.println(r + " , " + g + " , " + b  + " , " + a);
         return new int[]{r,g,b};
     }
 }
