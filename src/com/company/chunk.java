@@ -11,7 +11,9 @@ public class chunk {
     private int[] average;
 
     chunk(BufferedImage Img){
+
         this.img = Img;
+
         this.average = this.average();
     }
 
@@ -35,6 +37,11 @@ public class chunk {
     /*
 * OTHER METHODS
 */
+
+    /**
+     * Calculates and returns average color of buffered image
+     * @return Int[3] = {r,g,b,a}, if image contains a, otherwise a is always 255
+     */
     public int[] average(){
         int r = 0, g = 0, b = 0, a = 0, x= 0, y = 0, pc = 0;
 
@@ -60,5 +67,13 @@ public class chunk {
         //System.out.println(r + " , " + g + " , " + b  + " , " + a);
         return new int[]{r,g,b,a};
     }
-
+    //TODO: include alpha in calc.
+    /**
+     * Calculates and returns quadratic euclidean distance between given rgb vector and rgb vector of this
+     * @param a array of rgb values
+     * @return a Float with the quadratic distance between given rgb vector and rgb vector of this
+     */
+    public float euclideanDistance(int[] a){
+        return ((this.average[0] - a[0])*(this.average[0] - a[0]) + (this.average[1] - a[1])*(this.average[1] - a[1]) + (this.average[2] - a[2])*(this.average[2] - a[2]));
+    }
 }

@@ -1,4 +1,5 @@
 package com.company;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -15,8 +16,8 @@ public class Main {
 
         ArrayList<String> repPaths  = getAllImages(new File("C:\\Users\\Elliot\\Desktop\\test\\"));
 
-        int rows = 3;
-        int cols = 3;
+        int rows = 4;
+        int cols = 5;
 
         int chunkWidth = image.getWidth() / cols; // determines the chunk width and height
         int chunkHeight = image.getHeight() / rows;
@@ -25,6 +26,10 @@ public class Main {
         chunk[] chunks = new chunk[rows * cols];
         chunk[] replacements = new chunk[rows * cols];
 
+        BufferedImage combined = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics g = combined.getGraphics();
+
+        //split image into chunks
         for (int x = 0; x < rows; x++) {
             for (int y = 0; y < cols; y++) {
                 //Initialize the image array with image chunks
@@ -39,18 +44,42 @@ public class Main {
                 chunks[count-1].average();
             }
         }
-
-        for (int i = 0; i < cols; i++) {
+        //load replacement images into array
+        for (int i = 0; i < cols*rows; i++) {
             // read file from path
+            // % (cols*rows) to fill array even if not enough images in rep. folder
             File tempfile = new File(repPaths.get(i));
             FileInputStream tempfis = new FileInputStream(tempfile);
 
+            // scale loaded image to fit chunk
+            BufferedImage img = ImageIO.read(tempfis);
+            Image tmp = img.getScaledInstance(chunkWidth, chunkHeight, Image.SCALE_SMOOTH);
+            BufferedImage dimg = new BufferedImage(chunkWidth, chunkHeight, BufferedImage.TYPE_INT_ARGB);
+
+            Graphics2D g2d = dimg.createGraphics();
+            g2d.drawImage(tmp, 0, 0, null);
+            g2d.dispose();
+
             // fill array of chunks with read images
-            BufferedImage tempimg = ImageIO.read(tempfis);
-            replacements[i] = new chunk(tempimg);
+            replacements[i] = new chunk(dimg);
         }
 
-        ImageIO.write(chunks[8].getImg(), "jpeg", new File("collage.jpeg"));
+        //for each chunk, calculate the euclidean distance to every possible replacement
+        for (int i = 0; i < cols*rows; i++) {
+
+            float[] distances = new float[cols*rows];
+            int minEuclid;
+
+            for (int j = 0; j < cols*rows; j++) {
+                distances[j] = replacements[j].euclideanDistance(chunks[i].getAverage());
+
+            }
+            minEuclid = getMinValue(distances);
+
+            g.drawImage(replacements[minEuclid].getImg(), ((i%cols)*chunkWidth), ((i/cols)*chunkHeight), null);
+
+        }
+        ImageIO.write(combined, "PNG", new File("combined.png"));
 
     }
 
@@ -61,7 +90,7 @@ public class Main {
      * @return an ArrayList<String> containing all the file paths or nul if none are found..
      * @throws IOException
      */
-    public static ArrayList<String> getAllImages(File directory) throws IOException {
+    private static ArrayList<String> getAllImages(File directory) throws IOException {
         ArrayList<String> resultList = new ArrayList<String>(256);
         File[] f = directory.listFiles();
         for (File file : f) {
@@ -73,5 +102,22 @@ public class Main {
             return resultList;
         else
             return null;
+    }
+    /**
+     * Returns index of smalest value
+     * @param numbers array with float values
+     * @return int index of smallest value
+     */
+    private static int getMinValue(float[] numbers){
+        float minValue = numbers[0];
+        int index = 0;
+        for(int i=1;i<numbers.length;i++){
+            if(numbers[i] < minValue){
+                minValue = numbers[i];
+                index = i;
+            }
+        }
+        System.out.println(minValue);
+        return index;
     }
 }
