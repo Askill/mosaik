@@ -10,21 +10,22 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        File file = new File("C:\\Users\\Elliot\\Desktop\\bear.jpg");
+        File file = new File("C:\\Users\\Elliot\\Desktop\\test.jpg");
         FileInputStream fis = new FileInputStream(file);
         BufferedImage image = ImageIO.read(fis); //reading the image file
 
-        ArrayList<String> repPaths  = getAllImages(new File("C:\\Users\\Elliot\\Desktop\\test\\"));
+        ArrayList<String> repPaths  = getAllImages(new File("C:\\Users\\Elliot\\Desktop\\test1\\"));
 
-        int rows = 50;
-        int cols = 50;
+        int rows = 150;
+        int cols = 150;
 
         int chunkWidth = image.getWidth() / cols; // determines the chunk width and height
         int chunkHeight = image.getHeight() / rows;
         int count = 0;
+        int repCount = repPaths.size();
 
         chunk[] chunks = new chunk[rows * cols];
-        chunk[] replacements = new chunk[rows * cols];
+        chunk[] replacements = new chunk[repCount];
 
         BufferedImage combined = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics g = combined.getGraphics();
@@ -46,10 +47,10 @@ public class Main {
         }
         System.out.println("splitting done");
         //load replacement images into array
-        for (int i = 0; i < cols*rows; i++) {
+        for (int i = 0; i < repCount; i++) {
             // read file from path
             // % repPaths.size to fill array even if not enough images in rep. folder
-            File tempfile = new File(repPaths.get(i% repPaths.size()));
+            File tempfile = new File(repPaths.get(i));
             FileInputStream tempfis = new FileInputStream(tempfile);
 
             // scale loaded image to fit chunk
@@ -63,16 +64,16 @@ public class Main {
 
             // fill array of chunks with read images
             replacements[i] = new chunk(dimg);
-            System.out.println((i*100)/(cols*rows));
+            System.out.println((i*100)/(repCount));
         }
         System.out.println("images loaded");
         //for each chunk, calculate the euclidean distance to every possible replacement
         for (int i = 0; i < cols*rows; i++) {
 
-            float[] distances = new float[cols*rows];
+            float[] distances = new float[repCount];
             int minEuclid;
 
-            for (int j = 0; j < cols*rows; j++) {
+            for (int j = 0; j < repCount; j++) {
                 distances[j] = replacements[j].euclideanDistance(chunks[i].getAverage());
                 //int[] a = replacements[j].getAverage();
                 //int[] b = chunks[i].getAverage();
@@ -85,7 +86,7 @@ public class Main {
 
         }
         System.out.println("done");
-        ImageIO.write(combined, "PNG", new File("combined.png"));
+        ImageIO.write(combined, "PNG", new File("C:\\Users\\Elliot\\Desktop\\","combined.png"));
 
     }
 
