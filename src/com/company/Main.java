@@ -16,8 +16,8 @@ public class Main {
 
         ArrayList<String> repPaths  = getAllImages(new File("C:\\Users\\Elliot\\Desktop\\test\\"));
 
-        int rows = 4;
-        int cols = 5;
+        int rows = 50;
+        int cols = 50;
 
         int chunkWidth = image.getWidth() / cols; // determines the chunk width and height
         int chunkHeight = image.getHeight() / rows;
@@ -44,11 +44,12 @@ public class Main {
                 chunks[count-1].average();
             }
         }
+        System.out.println("splitting done");
         //load replacement images into array
         for (int i = 0; i < cols*rows; i++) {
             // read file from path
-            // % (cols*rows) to fill array even if not enough images in rep. folder
-            File tempfile = new File(repPaths.get(i));
+            // % repPaths.size to fill array even if not enough images in rep. folder
+            File tempfile = new File(repPaths.get(i% repPaths.size()));
             FileInputStream tempfis = new FileInputStream(tempfile);
 
             // scale loaded image to fit chunk
@@ -62,8 +63,9 @@ public class Main {
 
             // fill array of chunks with read images
             replacements[i] = new chunk(dimg);
+            System.out.println((i*100)/(cols*rows));
         }
-
+        System.out.println("images loaded");
         //for each chunk, calculate the euclidean distance to every possible replacement
         for (int i = 0; i < cols*rows; i++) {
 
@@ -72,6 +74,9 @@ public class Main {
 
             for (int j = 0; j < cols*rows; j++) {
                 distances[j] = replacements[j].euclideanDistance(chunks[i].getAverage());
+                //int[] a = replacements[j].getAverage();
+                //int[] b = chunks[i].getAverage();
+                //System.out.println( a[0]+ " " + a[1]+ " " +a[2]+ " " + b[0]+ " " + b[1]+ " " +b[2] + " " + replacements[j].euclideanDistance(chunks[i].getAverage()));
 
             }
             minEuclid = getMinValue(distances);
@@ -79,6 +84,7 @@ public class Main {
             g.drawImage(replacements[minEuclid].getImg(), ((i%cols)*chunkWidth), ((i/cols)*chunkHeight), null);
 
         }
+        System.out.println("done");
         ImageIO.write(combined, "PNG", new File("combined.png"));
 
     }
@@ -117,7 +123,7 @@ public class Main {
                 index = i;
             }
         }
-        System.out.println(minValue);
+        //System.out.println(minValue);
         return index;
     }
 }

@@ -63,7 +63,11 @@ public class chunk {
         g /= pc;
         b /= pc;
         a /= pc;
-
+        int [] temprgb = new int[3];
+        temprgb[0] = r;
+        temprgb[1] = g;
+        temprgb[2] = b;
+        this.average= temprgb;
         //System.out.println(r + " , " + g + " , " + b  + " , " + a);
         return new int[]{r,g,b,a};
     }
