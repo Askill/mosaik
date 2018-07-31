@@ -1,47 +1,152 @@
 package com.company;
 
 import javafx.application.Application;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.image.ImageView;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.awt.*;
+
 import java.util.ArrayList;
 
 public class Main extends Application {
 
+    private ImageView   image1;
+    private ImageView   image2;
+    private Button      picture;
+    private Button      replacements;
+    private TextField   row;
+    private TextField   col;
+    private Button      run;
+    private Button      save;
+    private ProgressBar progress;
+    private TextFlow    log;
+
+    private int rows = 150;
+    private int cols = 150;
+
+    private int chunkWidth;
+    private int chunkHeight;
+
+    private File file;
+    private ArrayList<String> repPaths;
+
+    private BufferedImage combined;
+
     @Override
     public void start(Stage primaryStage) throws Exception{
         Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
-        primaryStage.setTitle("Hello World");
-        primaryStage.setScene(new Scene(root, 300, 275));
+        primaryStage.setTitle("MosaikJF");
+        primaryStage.setScene(new Scene(root));
         primaryStage.show();
+
+        image1 =    (javafx.scene.image.ImageView)primaryStage.getScene().lookup("#image1");
+        image2 =    (javafx.scene.image.ImageView)primaryStage.getScene().lookup("#image2");
+        picture =   (Button)primaryStage.getScene().lookup("#picture");
+        replacements = (Button)primaryStage.getScene().lookup("#replacements");
+        row =       (TextField)primaryStage.getScene().lookup("#rows");
+        col =       (TextField)primaryStage.getScene().lookup("#cols");
+        run =       (Button)primaryStage.getScene().lookup("#run");
+        save =      (Button)primaryStage.getScene().lookup("#save");
+        progress =  (ProgressBar)primaryStage.getScene().lookup("#progress");
+        log =       (TextFlow)primaryStage.getScene().lookup("#log");
+
+        hanleEvents(primaryStage);
     }
 
-    public static void main(String[] args) throws IOException {
+    private void hanleEvents(Stage primaryStage) throws Exception{
+        picture.setOnAction(e -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Open Image");
+            file = fileChooser.showOpenDialog(primaryStage);
+            FileInputStream fis;
+            log.getChildren().add(new Text("loading image\n"));
+            try {
+                fis = new FileInputStream(file);
+                try {
+                    BufferedImage image = ImageIO.read(fis);
+                    image1.setImage(SwingFXUtils.toFXImage(image, null));
+                    log.getChildren().add(new Text("loaded image\n"));
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            } catch (FileNotFoundException e1) {
+                e1.printStackTrace();
+            }
 
-        File file = new File("C:\\Users\\Elliot\\Desktop\\test.jpg");
+        });
+
+        replacements.setOnAction(e -> {
+            DirectoryChooser fileChooser = new DirectoryChooser();
+            fileChooser.setTitle("Coose replacement images");
+            File tempfile = fileChooser.showDialog(primaryStage);
+
+            try {
+                repPaths  = getAllImages(tempfile);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+        });
+
+        run.setOnAction(e -> {
+
+            if(file == null || repPaths == null){
+
+            }
+            else{
+                try {
+                    cols = Integer.parseInt(col.getText());
+                    rows = Integer.parseInt(row.getText());
+                    main();
+                    image2.setImage(SwingFXUtils.toFXImage(combined, null));
+
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
+        save.setOnAction(e -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Save Image");
+            File file = fileChooser.showSaveDialog(primaryStage);
+
+            try {
+                ImageIO.write(combined, "PNG", file);
+
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+
+        });
+    }
+
+    public void main() throws IOException {
+
         FileInputStream fis = new FileInputStream(file);
         BufferedImage image = ImageIO.read(fis); //reading the image file
 
-        ArrayList<String> repPaths  = getAllImages(new File("C:\\Users\\Elliot\\Desktop\\test1\\"));
-
-        int rows = 150;
-        int cols = 150;
-
-        int chunkWidth = image.getWidth() / cols; // determines the chunk width and height
-        int chunkHeight = image.getHeight() / rows;
+        chunkWidth = image.getWidth() / cols; // determines the chunk width and height
+        chunkHeight = image.getHeight() / rows;
         int count = 0;
         int repCount = repPaths.size();
 
         chunk[] chunks = new chunk[rows * cols];
         chunk[] replacements = new chunk[repCount];
 
-        BufferedImage combined = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        combined = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics g = combined.getGraphics();
 
         //split image into chunks
@@ -59,7 +164,8 @@ public class Main extends Application {
                 chunks[count-1].average();
             }
         }
-        System.out.println("splitting done");
+        log.getChildren().add(new Text("splitting done \n"));
+        //System.out.println("splitting done");
         //load replacement images into array
         for (int i = 0; i < repCount; i++) {
             // read file from path
@@ -78,9 +184,12 @@ public class Main extends Application {
 
             // fill array of chunks with read images
             replacements[i] = new chunk(dimg);
-            System.out.println((i*100)/(repCount));
+            log.getChildren().add(new Text(Integer.toString((i*100)/(repCount)) + "\n"));
+            //System.out.println((i*100)/(repCount));
+            progress.setProgress((i*100)/(repCount));
         }
-        System.out.println("images loaded");
+        log.getChildren().add(new Text("images loaded \n"));
+        //System.out.println("images loaded");
         //for each chunk, calculate the euclidean distance to every possible replacement
         for (int i = 0; i < cols*rows; i++) {
 
@@ -99,8 +208,9 @@ public class Main extends Application {
             g.drawImage(replacements[minEuclid].getImg(), ((i%cols)*chunkWidth), ((i/cols)*chunkHeight), null);
 
         }
-        System.out.println("done");
-        ImageIO.write(combined, "PNG", new File("C:\\Users\\Elliot\\Desktop\\","combined.png"));
+        log.getChildren().add(new Text("replacement done \n"));
+        //System.out.println("done");
+
 
     }
 
