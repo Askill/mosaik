@@ -6,4 +6,4 @@ Currently lacking any sort of UI only useable via an IDE.
 
 Originl | Mosaik
 ---|---
-![](./merkel.png) | ![](./download.png)
+![](./merkel.png) | ![](./Download.png)
