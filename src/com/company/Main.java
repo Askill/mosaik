@@ -14,6 +14,7 @@ import javafx.scene.text.TextFlow;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.scene.control.CheckBox;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -34,12 +35,11 @@ public class Main extends Application {
     private Button      save;
     private ProgressBar progress;
     private TextFlow    log;
+    private javafx.scene.control.CheckBox scaleing;
 
     private int rows = 150;
     private int cols = 150;
-
-    private int chunkWidth;
-    private int chunkHeight;
+    private boolean scale = false;
 
     private File file;
     private ArrayList<String> repPaths;
@@ -63,83 +63,105 @@ public class Main extends Application {
         save =      (Button)primaryStage.getScene().lookup("#save");
         progress =  (ProgressBar)primaryStage.getScene().lookup("#progress");
         log =       (TextFlow)primaryStage.getScene().lookup("#log");
+        scaleing =  (javafx.scene.control.CheckBox)primaryStage.getScene().lookup("#scale");
 
-        hanleEvents(primaryStage);
+        handleEvents(primaryStage);
     }
 
-    private void hanleEvents(Stage primaryStage) throws Exception{
+    private void handleEvents(Stage primaryStage) throws Exception{
         picture.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Open Image");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JPEG", "*.jpeg"));
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JPG", "*.jpg"));
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("GIF", "*.gif"));
+
             file = fileChooser.showOpenDialog(primaryStage);
             FileInputStream fis;
-            log.getChildren().add(new Text("loading image\n"));
+
+            log.getChildren().add(0, new Text("loading image\n"));
             try {
                 fis = new FileInputStream(file);
                 try {
                     BufferedImage image = ImageIO.read(fis);
                     image1.setImage(SwingFXUtils.toFXImage(image, null));
                     log.getChildren().add(new Text("loaded image\n"));
-                } catch (IOException e1) {
+                } catch (Exception e1) {
                     e1.printStackTrace();
+                    log.getChildren().add(0, new Text("Error while loading Image\n"));
                 }
-            } catch (FileNotFoundException e1) {
+            } catch (Exception e1) {
                 e1.printStackTrace();
+                log.getChildren().add(0, new Text("Error while loading Image\n"));
             }
 
         });
 
         replacements.setOnAction(e -> {
             DirectoryChooser fileChooser = new DirectoryChooser();
-            fileChooser.setTitle("Coose replacement images");
+            fileChooser.setTitle("Choose replacement images");
             File tempfile = fileChooser.showDialog(primaryStage);
 
             try {
                 repPaths  = getAllImages(tempfile);
-            } catch (IOException e1) {
+            } catch (Exception e1) {
                 e1.printStackTrace();
+                log.getChildren().add(0, new Text("Error while loading  replacement images\n"));
             }
         });
 
         run.setOnAction(e -> {
-
-            if(file == null || repPaths == null){
-
-            }
-            else{
+            if(file != null && repPaths != null){
                 try {
-                    cols = Integer.parseInt(col.getText());
-                    rows = Integer.parseInt(row.getText());
+                    if(!col.getText().equals("")){
+                        cols = Integer.parseInt(col.getText());
+                    }
+                    if(!row.getText().equals("")){
+                        rows = Integer.parseInt(row.getText());
+                    }
+                    scale = scaleing.isSelected();
                     main();
                     image2.setImage(SwingFXUtils.toFXImage(combined, null));
 
-                } catch (IOException e1) {
+                } catch (Exception e1) {
                     e1.printStackTrace();
+                    log.getChildren().add(0, new Text("Error while calculating new image \n"));
                 }
             }
+            else{
+                log.getChildren().add(0, new Text("Image or replacement images not selected \n"));
+            }
+
         });
         save.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save Image");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JPEG", "*.jpeg"));
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JPG", "*.jpg"));
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("GIF", "*.gif"));
+
             File file = fileChooser.showSaveDialog(primaryStage);
 
             try {
                 ImageIO.write(combined, "PNG", file);
 
-            } catch (IOException e1) {
+            } catch (Exception e1) {
                 e1.printStackTrace();
+                log.getChildren().add(0, new Text("Error while saving \n"));
             }
 
         });
     }
 
-    public void main() throws IOException {
+    public void main() throws Exception {
 
         FileInputStream fis = new FileInputStream(file);
         BufferedImage image = ImageIO.read(fis); //reading the image file
 
-        chunkWidth = image.getWidth() / cols; // determines the chunk width and height
-        chunkHeight = image.getHeight() / rows;
+        int chunkWidth = image.getWidth() / cols;
+        int chunkHeight = image.getHeight() / rows;
         int count = 0;
         int repCount = repPaths.size();
 
@@ -164,8 +186,8 @@ public class Main extends Application {
                 chunks[count-1].average();
             }
         }
-        log.getChildren().add(new Text("splitting done \n"));
-        //System.out.println("splitting done");
+        log.getChildren().add(0, new Text("splitting done \n"));
+
         //load replacement images into array
         for (int i = 0; i < repCount; i++) {
             // read file from path
@@ -175,21 +197,30 @@ public class Main extends Application {
 
             // scale loaded image to fit chunk
             BufferedImage img = ImageIO.read(tempfis);
-            Image tmp = img.getScaledInstance(chunkWidth, chunkHeight, Image.SCALE_SMOOTH);
-            BufferedImage dimg = new BufferedImage(chunkWidth, chunkHeight, BufferedImage.TYPE_INT_ARGB);
 
-            Graphics2D g2d = dimg.createGraphics();
-            g2d.drawImage(tmp, 0, 0, null);
-            g2d.dispose();
+            if(scale){
+                Image tmp = img.getSubimage(0,0,chunkWidth,chunkHeight);
+                BufferedImage dimg = new BufferedImage(chunkWidth, chunkHeight, BufferedImage.TYPE_INT_ARGB);
 
-            // fill array of chunks with read images
-            replacements[i] = new chunk(dimg);
-            log.getChildren().add(new Text(Integer.toString((i*100)/(repCount)) + "\n"));
-            //System.out.println((i*100)/(repCount));
+                Graphics2D g2d = dimg.createGraphics();
+                g2d.drawImage(tmp, 0, 0, null);
+                g2d.dispose();
+
+                // fill array of chunks with read images
+                replacements[i] = new chunk(dimg);
+            }
+            else{
+                // fill array of chunks with read images
+                replacements[i] = new chunk(img);
+            }
+
+
+            log.getChildren().add(0, new Text(Integer.toString((i*100)/(repCount)) + "\n"));
+
             progress.setProgress((i*100)/(repCount));
         }
-        log.getChildren().add(new Text("images loaded \n"));
-        //System.out.println("images loaded");
+        log.getChildren().add(0, new Text("images loaded \n"));
+
         //for each chunk, calculate the euclidean distance to every possible replacement
         for (int i = 0; i < cols*rows; i++) {
 
@@ -197,21 +228,14 @@ public class Main extends Application {
             int minEuclid;
 
             for (int j = 0; j < repCount; j++) {
-                distances[j] = replacements[j].euclideanDistance(chunks[i].getAverage());
-                //int[] a = replacements[j].getAverage();
-                //int[] b = chunks[i].getAverage();
-                //System.out.println( a[0]+ " " + a[1]+ " " +a[2]+ " " + b[0]+ " " + b[1]+ " " +b[2] + " " + replacements[j].euclideanDistance(chunks[i].getAverage()));
-
+                distances[j] = chunks[i].euclideanDistance(replacements[j].getAverage());
             }
-            minEuclid = getMinValue(distances);
+            minEuclid = getIndexofLowest(distances);
 
-            g.drawImage(replacements[minEuclid].getImg(), ((i%cols)*chunkWidth), ((i/cols)*chunkHeight), null);
+            g.drawImage(replacements[minEuclid].getImg(), ((i%cols)* chunkWidth), ((i/cols)* chunkHeight), null);
 
         }
-        log.getChildren().add(new Text("replacement done \n"));
-        //System.out.println("done");
-
-
+        log.getChildren().add(0, new Text("replacement done \n"));
     }
 
     /**
@@ -219,9 +243,9 @@ public class Main extends Application {
      * Source: http://www.java2s.com/Code/Java/2D-Graphics-GUI/Returnsalljpgimagesfromadirectoryinanarray.htm
      * @param directory                 the directory to start with
      * @return an ArrayList<String> containing all the file paths or nul if none are found..
-     * @throws IOException
+     * @throws Exception
      */
-    private static ArrayList<String> getAllImages(File directory) throws IOException {
+    private static ArrayList<String> getAllImages(File directory) throws Exception {
         ArrayList<String> resultList = new ArrayList<String>(256);
         File[] f = directory.listFiles();
         for (File file : f) {
@@ -239,7 +263,7 @@ public class Main extends Application {
      * @param numbers array with float values
      * @return int index of smallest value
      */
-    private static int getMinValue(float[] numbers){
+    private static int getIndexofLowest(float[] numbers){
         float minValue = numbers[0];
         int index = 0;
         for(int i=1;i<numbers.length;i++){
@@ -248,7 +272,7 @@ public class Main extends Application {
                 index = i;
             }
         }
-        //System.out.println(minValue);
+
         return index;
     }
 }
