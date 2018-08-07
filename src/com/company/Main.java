@@ -65,6 +65,8 @@ public class Main extends Application {
         log =       (TextFlow)primaryStage.getScene().lookup("#log");
         scaleing =  (javafx.scene.control.CheckBox)primaryStage.getScene().lookup("#scale");
 
+        scaleing.setSelected(true);
+
         handleEvents(primaryStage);
     }
 
@@ -72,6 +74,7 @@ public class Main extends Application {
         picture.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Open Image");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("all", "*.*"));
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JPEG", "*.jpeg"));
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JPG", "*.jpg"));
@@ -199,7 +202,7 @@ public class Main extends Application {
             BufferedImage img = ImageIO.read(tempfis);
 
             if(scale){
-                Image tmp = img.getSubimage(0,0,chunkWidth,chunkHeight);
+                Image tmp = img.getScaledInstance(chunkWidth, chunkHeight, Image.SCALE_SMOOTH);
                 BufferedImage dimg = new BufferedImage(chunkWidth, chunkHeight, BufferedImage.TYPE_INT_ARGB);
 
                 Graphics2D g2d = dimg.createGraphics();
